@@ -21,3 +21,10 @@ Port	Protocol	Purpose	Source
 10259	TCP	kube-scheduler	Master Node Security Group
 
 ```
+
+
+```
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+kubectl apply -f ingress.yaml
+```
