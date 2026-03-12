@@ -27,4 +27,10 @@ Port	Protocol	Purpose	Source
 kubectl apply -f deployment.yaml
 kubectl apply -f service.yaml
 kubectl apply -f ingress.yaml
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+kubectl get pods -n ingress-nginx
+kubectl get svc -n ingress-nginx
+WorkerNodeIP:30080
+http://<worker-node-ip>:30080
 ```
