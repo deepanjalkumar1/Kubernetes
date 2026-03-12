@@ -39,6 +39,21 @@ http://<worker-node-ip>:30080
 
 
 ```
+Delete the Deployment first (optional but cleaner)
+kubectl delete deployment fastapi
+
+This stops Kubernetes from recreating pods while you make changes.
+
+If you also want to remove the Service:
+
+kubectl delete svc fastapi-service
+
+If you have Ingress:
+
+kubectl delete ingress fastapi-ingress
+```
+
+```
 Create AWS Load Balancer
 
 Now create an AWS ALB.
