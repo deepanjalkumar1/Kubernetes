@@ -24,6 +24,15 @@ Port	Protocol	Purpose	Source
 
 
 ```
+
+kubectl create secret docker-registry ecr-pull-secret \
+  --docker-server=XXXXXXXXXXXX.dkr.ecr.ap-south-1.amazonaws.com \
+  --docker-username=AWS \
+  --docker-password=<AWS_SECRET_ACCESS_KEY> \
+  --docker-email=<your-email@example.com>
+
+if the images are pushed to aws ecr which is private you will need access key
+
 kubectl apply -f deployment.yaml
 kubectl apply -f service.yaml
 kubectl apply -f ingress.yaml
