@@ -33,4 +33,30 @@ kubectl get pods -n ingress-nginx
 kubectl get svc -n ingress-nginx
 WorkerNodeIP:30080
 http://<worker-node-ip>:30080
+
+
+```
+
+
+```
+Create AWS Load Balancer
+
+Now create an AWS ALB.
+
+Listener:
+
+HTTP : 80
+
+Target group:
+
+Instance type
+
+Target:
+
+WorkerNodeIP : 30080
+
+Health check path:
+
+/
+
 ```
