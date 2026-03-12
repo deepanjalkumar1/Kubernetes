@@ -235,7 +235,6 @@ info "  Pod CIDR     : $POD_CIDR"
 KUBEADM_OUTPUT=$(kubeadm init \
   --apiserver-advertise-address="$ADVERTISE_IP" \
   --pod-network-cidr="$POD_CIDR" \
-  --kubernetes-version="1.${K8S_VERSION}.0" \
   2>&1) || {
     echo "$KUBEADM_OUTPUT"
     fail "kubeadm init failed. See above output and $LOG_FILE"
