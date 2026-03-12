@@ -25,6 +25,10 @@ Port	Protocol	Purpose	Source
 
 ```
 
+
+Before running kubectl apply -f deployment.yaml install aws cli and docker.io
+
+
 kubectl create secret docker-registry ecr-pull-secret \
   --docker-server=XXXXXXXXXXXX.dkr.ecr.ap-south-1.amazonaws.com \
   --docker-username=AWS \
