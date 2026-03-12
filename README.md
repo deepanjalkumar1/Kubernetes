@@ -24,7 +24,7 @@ Port	Protocol	Purpose	Source
 
 
 ```
-
+# some commands: kubectl get endpoints fastapi-service
 
 Before running kubectl apply -f deployment.yaml install aws cli and docker.io
 
