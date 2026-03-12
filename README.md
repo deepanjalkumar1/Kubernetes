@@ -28,6 +28,17 @@ Port	Protocol	Purpose	Source
 
 Before running kubectl apply -f deployment.yaml install aws cli and docker.io
 
+Run:
+
+aws configure
+
+It will ask:
+
+AWS Access Key ID:
+AWS Secret Access Key:
+Default region name:
+Default output format:
+
 aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin xxxxxxxxxxxxxx.dkr.ecr.ap-south-1.amazonaws.com
 
 kubectl create secret docker-registry ecr-pull-secret \
