@@ -50,8 +50,6 @@ if the images are pushed to aws ecr which is private you will need access key
 
 kubectl apply -f deployment.yaml
 kubectl apply -f service.yaml
-kubectl apply -f ingress.yaml
-
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
 kubectl get pods -n ingress-nginx
 kubectl get svc -n ingress-nginx
