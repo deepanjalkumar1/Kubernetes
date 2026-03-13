@@ -55,6 +55,14 @@ kubectl apply -f ingress.yaml
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
 kubectl get pods -n ingress-nginx
 kubectl get svc -n ingress-nginx
+kubectl apply -f ingress.yaml
+
+      if you are seeing error like : Error from server (InternalError): error when creating "ingress.yaml": Internal error occurred: failed calling webhook "validate.nginx.ingress.kubernetes.io": failed to call webhook: Post "https://ingress-nginx-controller-admission.ingress-nginx.svc:443/networking/v1/ingresses?timeout=10s": context deadline exceeded
+
+      then do this : kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
+
+                     kubectl apply -f ingress.yaml
+
 WorkerNodeIP:30080
 http://<worker-node-ip>:30080
 
