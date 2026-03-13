@@ -16,6 +16,6 @@ spec:
       - name: ecr-secret
       containers:
       - name: fastapi
-        image: xxxxxxxxxxxxxxx.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:${IMAGE_TAG}
+        image: xxxxxxxxxxxxxxx.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:latest
         ports:
         - containerPort: 8000
