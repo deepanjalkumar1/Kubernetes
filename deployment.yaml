@@ -12,8 +12,10 @@ spec:
       labels:
         app: fastapi
     spec:
+      imagePullSecrets:
+      - name: ecr-secret
       containers:
       - name: fastapi
-        image: XXXXXXXXXXXX.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:${{IMAGE_TAG}}
+        image: xxxxxxxxxxxxxxx.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:${{IMAGE_TAG}}
         ports:
         - containerPort: 8000
