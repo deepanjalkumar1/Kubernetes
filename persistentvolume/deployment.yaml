@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: fastapi
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: fastapi
@@ -14,19 +14,28 @@ spec:
     spec:
       containers:
       - name: fastapi
-        image: xxxxxxxxxxxxx.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:initial
+        image: xxxxxxxxxxxxxxxxx.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:initial
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
-
+        
         volumeMounts:
         - name: logs-volume
-          mountPath: /app/logs
+          mountPath: /githubactions/src/logs
+     
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
 
+      imagePullSecrets:
+      - name: ecr-pull-secret
+      
       volumes:
       - name: logs-volume
         persistentVolumeClaim:
           claimName: fastapi-logs-pvc
-
-      imagePullSecrets:
-      - name: ecr-pull-secret
+      
