@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fastapi
+  template:
+    metadata:
+      labels:
+        app: fastapi
+    spec:
+      containers:
+      - name: fastapi
+        image: xxxxxxxxxxxxx.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:initial
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+
+        volumeMounts:
+        - name: logs-volume
+          mountPath: /app/logs
+
+      volumes:
+      - name: logs-volume
+        persistentVolumeClaim:
+          claimName: fastapi-logs-pvc
+
+      imagePullSecrets:
+      - name: ecr-pull-secret
