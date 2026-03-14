@@ -4,8 +4,10 @@ metadata:
   name: fastapi-logs-pv
 spec:
   capacity:
-    storage: 1Gi
+    storage: 10Mi
   accessModes:
     - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: /data/fastapi-logs
+    path: /home/ubuntu/data
+    type: DirectoryOrCreate
