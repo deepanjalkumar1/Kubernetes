@@ -14,9 +14,18 @@ spec:
     spec:
       containers:
       - name: fastapi
-        image: xxxxxxxxxxxxx.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app
+        image: XXXXXXXXXXXXXXXXXXXXX.dkr.ecr.ap-south-1.amazonaws.com/fastapi-app:initial
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
+
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
       imagePullSecrets:
       - name: ecr-pull-secret
