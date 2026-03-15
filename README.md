@@ -64,7 +64,7 @@ kubectl apply -f ingress.yaml
 WorkerNodeIP:30080
 http://<worker-node-ip>:30080
 
-
+Note: Sometime the pod fail because secrets are expired
 ```
 
 
