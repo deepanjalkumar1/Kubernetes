@@ -5,14 +5,6 @@
 
             ./deploy-monitoring.sh
 
-# 2. From the master node (SSH in first)
+            on master node allow security inboud rule for port 32000, 32001, 32002 from source your specific ip address
 
-             scp fix-controlplane-metrics.sh ubuntu@<master-ip>:~/
-
-             ssh ubuntu@<master-ip>
-
-             sudo bash fix-controlplane-metrics.sh
-
-# 3. Health check (from local machine)
-
-             ./check-monitoring.sh
+            sudo tcpdump -n -i any port 32000 2>/dev/null | head -10
