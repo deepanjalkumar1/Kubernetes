@@ -13,7 +13,7 @@
 
             ./deploy-loki.sh
             
-             View FastAPI pod logs:
+             On Graphana, View FastAPI pod logs:
               
                           1. Left sidebar → Explore (compass icon)
   
