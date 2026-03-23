@@ -9,6 +9,10 @@
 
             sudo tcpdump -n -i any port 32000 2>/dev/null | head -10
 
+            chmod +x deploy-loki.sh
+
+            ./deploy-loki.sh
+            
              View FastAPI pod logs:
               
                           1. Left sidebar → Explore (compass icon)
