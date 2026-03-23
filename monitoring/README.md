@@ -24,3 +24,23 @@
                           4. Add filter  → pod =~ fastapi.*
   
                           5. Click Run query
+
+            Now to have custom view of dashboard do this :
+
+                        chmod +x enable-ingress-metrics.sh
+
+                        sudo bash ./enable-ingress-metrics.sh
+
+                        Step 2 — Import dashboard into Grafana:
+
+                                    Open Grafana → http://<master-public-ip>:32000
+                                    
+                                    Left sidebar → Dashboards → Import
+
+                                    Click Upload JSON file → select fastapi-dashboard.json
+
+                                    Set Prometheus datasource → your Prometheus
+
+                                    Set Loki datasource → your Loki
+
+                                    Click Import
