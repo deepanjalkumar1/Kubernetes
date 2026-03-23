@@ -261,6 +261,20 @@ prometheus:
 promtail:
   enabled: false
 
+# CRITICAL: Disable memcached caches — they request more CPU/RAM than this
+# cluster has available. Loki works correctly without them on small clusters.
+# Without cache: slightly slower repeat queries. Acceptable for lab use.
+chunksCache:
+  enabled: false
+
+resultsCache:
+  enabled: false
+
+# Disable canary — it adds a pod that continuously writes/reads test logs
+# and wastes resources on a small cluster
+lokiCanary:
+  enabled: false
+
 # ServiceMonitor for Prometheus to scrape Loki metrics
 serviceMonitor:
   enabled: true
