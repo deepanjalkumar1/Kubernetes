@@ -125,7 +125,7 @@ kubectl get storageclass "$STORAGE_CLASS" &>/dev/null || {
 }
 log_info "StorageClass '$STORAGE_CLASS' ✔"
 
-## Worker disk — need at least 3G free (2G PVC + 1G headroom for Loki image)
+## Worker disk — need at least 3G free
 WORKER_NODE=$(kubectl get nodes --no-headers \
   -l '!node-role.kubernetes.io/control-plane,!node-role.kubernetes.io/master' \
   2>/dev/null | awk 'NR==1{print $1}')
@@ -162,30 +162,16 @@ log_info "Repos updated ✔"
 # ═══════════════════════════════════════════════════════════════════════════════
 log_section "STEP 3: Generate Loki values"
 # ═══════════════════════════════════════════════════════════════════════════════
-# Loki in SingleBinary mode:
-#   - All components (ingester, querier, compactor) in one pod
-#   - Lowest possible RAM footprint
-#   - Local filesystem backend — no S3 needed
-#   - 2Gi PVC — safe for 7.4G worker disk
-#
-# Resource sizing:
-#   RAM request: 200Mi  (leaves 2.2G free for existing pods)
-#   RAM limit:   400Mi  (prevents runaway memory from log volume spikes)
-#   CPU request: 100m
-#   CPU limit:   300m
 
 cat > "$LOKI_VALUES" << 'YAML'
-# Loki SingleBinary — monolithic mode, one pod, one PVC
-# Correct for a 2-node lab cluster with local storage
-
 loki:
   commonConfig:
-    replication_factor: 1          # Single replica — we only have 1 worker
+    replication_factor: 1
 
-  auth_enabled: false              # No multi-tenancy — simpler for lab use
+  auth_enabled: false
 
   storage:
-    type: filesystem               # Local disk — no S3/GCS needed
+    type: filesystem
 
   schemaConfig:
     configs:
@@ -198,10 +184,10 @@ loki:
           period: 24h
 
   limits_config:
-    retention_period: 168h         # 7 days — matches Prometheus retention
+    retention_period: 168h
     ingestion_rate_mb: 4
     ingestion_burst_size_mb: 6
-    max_streams_per_user: 0        # unlimited (auth disabled)
+    max_streams_per_user: 0
     max_global_streams_per_user: 0
 
   compactor:
@@ -209,7 +195,6 @@ loki:
     retention_enabled: true
     retention_delete_delay: 2h
 
-# SingleBinary deployment — one pod runs everything
 singleBinary:
   replicas: 1
   resources:
@@ -226,7 +211,6 @@ singleBinary:
     accessModes:
       - ReadWriteOnce
 
-# Disable all other deployment modes — not needed for single binary
 read:
   replicas: 0
 write:
@@ -234,11 +218,9 @@ write:
 backend:
   replicas: 0
 
-# Disable gateway (nginx proxy) — adds RAM overhead, not needed for lab
 gateway:
   enabled: false
 
-# Disable self-monitoring — saves ~200Mi RAM on this small cluster
 monitoring:
   selfMonitoring:
     enabled: false
@@ -247,39 +229,33 @@ monitoring:
   lokiCanary:
     enabled: false
   dashboards:
-    enabled: false        # We add dashboards manually below
+    enabled: false
 
-# Disable Grafana subchart — we already have Grafana running
 grafana:
   enabled: false
 
-# Disable Prometheus subchart — we already have it
 prometheus:
   enabled: false
 
-# Disable Promtail subchart — we deploy it separately for full control
 promtail:
   enabled: false
 
-# CRITICAL: Disable memcached caches — they request more CPU/RAM than this
-# cluster has available. Loki works correctly without them on small clusters.
-# Without cache: slightly slower repeat queries. Acceptable for lab use.
 chunksCache:
   enabled: false
 
 resultsCache:
   enabled: false
 
-# Disable canary — it adds a pod that continuously writes/reads test logs
-# and wastes resources on a small cluster
 lokiCanary:
   enabled: false
 
-# ServiceMonitor for Prometheus to scrape Loki metrics
+test:
+  enabled: false
+
 serviceMonitor:
   enabled: true
   labels:
-    release: kube-prom-stack      # Must match Prometheus operator selector
+    release: kube-prom-stack
 YAML
 
 log_info "Loki values written to $LOKI_VALUES ✔"
@@ -287,57 +263,33 @@ log_info "Loki values written to $LOKI_VALUES ✔"
 # ═══════════════════════════════════════════════════════════════════════════════
 log_section "STEP 4: Generate Promtail values"
 # ═══════════════════════════════════════════════════════════════════════════════
-# Promtail runs as a DaemonSet on EVERY node including master.
-# It tails /var/log/pods/** which contains all container logs.
-# Labels each log stream with: namespace, pod name, container name.
-# This means every pod's logs are automatically available in Grafana/Loki.
-#
-# Resource sizing:
-#   RAM request: 80Mi per node (2 nodes = 160Mi total)
-#   RAM limit:   128Mi per node
 
 cat > "$PROMTAIL_VALUES" << YAML
-# Promtail DaemonSet — tails logs from all pods on all nodes
-
 config:
-  # Point Promtail at our Loki instance
-  clients:
-    - url: http://loki-gateway.${NAMESPACE}.svc.cluster.local/loki/api/v1/push
-
-  # Since we disabled gateway, point directly at Loki
   clients:
     - url: http://${LOKI_RELEASE}.${NAMESPACE}.svc.cluster.local:3100/loki/api/v1/push
 
   snippets:
-    # Scrape all pod logs from /var/log/pods
-    # Kubernetes automatically creates symlinks here for every container
     pipelineStages:
-      - cri: {}       # Parse containerd log format (your cluster uses containerd)
+      - cri: {}
 
     scrapeConfigs: |
       - job_name: kubernetes-pods
         kubernetes_sd_configs:
           - role: pod
         relabel_configs:
-          # Use pod namespace as label
           - source_labels: [__meta_kubernetes_namespace]
             target_label: namespace
-          # Use pod name as label
           - source_labels: [__meta_kubernetes_pod_name]
             target_label: pod
-          # Use container name as label
           - source_labels: [__meta_kubernetes_pod_container_name]
             target_label: container
-          # Use app label if present
           - source_labels: [__meta_kubernetes_pod_label_app]
             target_label: app
-          # Use app.kubernetes.io/name if app label not present
           - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
             target_label: app
-          # Node name for filtering by node
           - source_labels: [__meta_kubernetes_pod_node_name]
             target_label: node
-          # Build the log path from pod UID and container name
           - source_labels:
               [__meta_kubernetes_pod_uid, __meta_kubernetes_pod_container_name]
             target_label: __path__
@@ -352,7 +304,6 @@ resources:
     cpu: 200m
     memory: 128Mi
 
-# CRITICAL: Tolerate master taint so Promtail runs on master node too
 tolerations:
   - key: node-role.kubernetes.io/control-plane
     operator: Exists
@@ -361,7 +312,6 @@ tolerations:
     operator: Exists
     effect: NoSchedule
 
-# Mount host log paths — Promtail needs to read actual node log files
 volumeMounts:
   - name: pods-logs
     mountPath: /var/log/pods
@@ -381,7 +331,7 @@ volumes:
 serviceMonitor:
   enabled: true
   labels:
-    release: kube-prom-stack      # Must match Prometheus operator selector
+    release: kube-prom-stack
 YAML
 
 log_info "Promtail values written to $PROMTAIL_VALUES ✔"
@@ -415,8 +365,6 @@ log_info "Promtail manifests applied ✔"
 # ═══════════════════════════════════════════════════════════════════════════════
 log_section "STEP 7: Add Loki datasource to Grafana"
 # ═══════════════════════════════════════════════════════════════════════════════
-# We inject the datasource via a ConfigMap that Grafana's sidecar picks up.
-# This is the same mechanism Prometheus datasource was added — no manual UI clicks.
 
 kubectl apply -f - << YAML
 apiVersion: v1
@@ -425,7 +373,7 @@ metadata:
   name: loki-datasource
   namespace: ${NAMESPACE}
   labels:
-    grafana_datasource: "1"          # Grafana sidecar watches this label
+    grafana_datasource: "1"
 data:
   loki-datasource.yaml: |-
     apiVersion: 1
@@ -471,7 +419,6 @@ while true; do
     break
   fi
 
-  # Diagnostics every 60s
   if (( ELAPSED - LAST_DIAG >= 60 )); then
     LAST_DIAG=$ELAPSED
     WARN=$(kubectl get events -n "$NAMESPACE" \
@@ -526,7 +473,7 @@ echo -e "  4. Set: namespace = default"
 echo -e "  5. Set: pod = <your-fastapi-pod-name>"
 echo -e "  6. Click 'Run query'"
 echo ""
-echo -e "${BOLD}  Useful LogQL queries for your FastAPI app:${NC}"
+echo -e "${BOLD}  Useful LogQL queries:${NC}"
 echo -e '  All logs from default namespace:'
 echo -e '    {namespace="default"}'
 echo -e ""
@@ -536,23 +483,21 @@ echo -e ""
 echo -e '  Filter for errors only:'
 echo -e '    {namespace="default", pod=~"fastapi.*"} |= "error"'
 echo -e ""
-echo -e '  Filter for HTTP 5xx responses:'
+echo -e '  Filter for HTTP 5xx:'
 echo -e '    {namespace="default", pod=~"fastapi.*"} |= "500"'
 echo -e ""
-echo -e '  Count error rate over time:'
+echo -e '  Error rate over time:'
 echo -e '    sum(rate({namespace="default"} |= "error" [5m]))'
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-echo -e "${YELLOW}${BOLD}  Limitations on this cluster:${NC}"
-echo -e "  • Logs stored on worker local disk — lost if worker is terminated"
+echo -e "${YELLOW}${BOLD}  Limitations:${NC}"
+echo -e "  • Logs on worker local disk — lost if worker terminated"
 echo -e "  • 7 days retention (2Gi PVC)"
-echo -e "  • To add S3 persistence: attach IAM role to worker then re-run"
-echo -e "    with S3 backend — I will write that script when you are ready"
 echo ""
 echo -e "${BOLD}  Useful commands:${NC}"
-echo -e "  kubectl logs -n default <pod-name> -f          # live tail in terminal"
-echo -e "  kubectl logs -n default <pod-name> --previous  # crashed container logs"
-echo -e "  helm status loki -n monitoring                 # loki helm status"
-echo -e "  helm status promtail -n monitoring             # promtail helm status"
-echo -e "  ./deploy-loki.sh --uninstall                   # remove everything"
+echo -e "  kubectl logs -n default <pod-name> -f"
+echo -e "  kubectl logs -n default <pod-name> --previous"
+echo -e "  helm status loki -n monitoring"
+echo -e "  helm status promtail -n monitoring"
+echo -e "  ./deploy-loki.sh --uninstall"
 echo ""
